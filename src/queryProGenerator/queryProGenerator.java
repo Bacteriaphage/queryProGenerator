@@ -7,21 +7,12 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
+import java.util.HashMap;
 public class queryProGenerator {
 	String usr = "postgres";
 	String pwd = "zhy199208";
 	String url = "jdbc:postgresql://localhost:5432/sales";
 	
-	static public class MFstructure{
-		String typeName;
-		String attriName;
-		MFstructure(String type, String attri){
-			typeName = type;
-			attriName = attri;
-		}
-		MFstructure(){}
-	}
 	static public class Query{
 		ArrayList<String> select;
 		int numOfGV;
@@ -42,28 +33,14 @@ public class queryProGenerator {
 		queryProGenerator task = new queryProGenerator();
 		task.connect();
 		Query myQuery = new Query();
-		ArrayList<MFstructure> myStructure;
+		HashMap<String, String> MFstructure = new HashMap<String,String>();
 		task.inputQuery(myQuery);
-		for(Object obj:myQuery.select){
-			System.out.print(obj);
-		}
-		System.out.print("\n");
-		System.out.println(myQuery.numOfGV);
-		for(Object obj:myQuery.groupingAttri){
-			System.out.print(obj);
-		}
-		System.out.print("\n");
-		for(Object obj:myQuery.aggreFunc){
-			System.out.print(obj);
-		}
-		System.out.print("\n");
-		for(Object obj:myQuery.suchThat){
-			System.out.print(obj);
-		}
-		System.out.print("\n");
-		for(Object obj:myQuery.havingCondi){
-			System.out.print(obj);
-		}
+		task.buildStruct(myQuery,MFstructure);
+		Iterator it = MFstructure.entrySet().iterator();
+/*		while(it.hasNext()){
+			Map.Entry entry = (Map.Entry) it.next();
+			System.out.println(entry.getValue() + " " + entry.getKey());
+		}*/
 		//dbmsass1.retrieve();
 	}
 	//Function to connect to the database
@@ -129,51 +106,26 @@ public class queryProGenerator {
 			}
 		}
 	}
-	void buildStruct(){
-		
+	void buildStruct(Query myQuery, HashMap<String, String> MFstructure){
+		try{
+			Connection con = DriverManager.getConnection(url, usr, pwd);
+			System.out.println("Success connecting server!");
+			for(String obj:myQuery.select){
+				ResultSet rs;
+				Statement st = con.createStatement();
+				String ret = "select * from information_schema.columns where table_name = 'sales' and column_name = '";
+				//ret.concat("where table_name = 'sales' and column_name = '");
+				String[] tmp = obj.split("_");
+				ret += tmp[tmp.length-1];
+				ret += "'";
+				rs = st.executeQuery(ret);
+				rs.next();
+				MFstructure.put(obj, rs.getString(8));
+			}
+		}catch(Exception exception){
+			System.out.println("Fail to build MFstructure");
+			exception.printStackTrace();
+		}
 	}
-	//customized function
-	
-	
-	
-	
-/*	void retrieve(){
-		try {
-	        Connection con = DriverManager.getConnection(url, usr, pwd);    //connect to the database using the password and username
-	        System.out.println("Success connecting server!");
-	        ResultSet rs;          			 //resultset object gets the set of values retreived from the database
-	        boolean more;
-	        int i=1,j=0;
-	        Statement st = con.createStatement();   //statement created to execute the query
-	        String ret = "select * from sales";
-	        rs = st.executeQuery(ret);              //executing the query 
-	        more=rs.next();                         //checking if more rows available
-	        System.out.printf("%-8s","Customer  ");             //left aligned
-	        System.out.printf("%-7s","Product  ");              //left aligned
-	        System.out.printf("%-5s","Day    " +
-	        		"");                //left aligned
-	        System.out.printf("%-10s","Month    ");          //left aligned
-	        System.out.printf("%-5s","Year   ");                //left aligned
-	        System.out.printf("%-10s","State    ");          //left aligned
-	        System.out.printf("%-5s%n","Quant  ");              //left aligned
-	        System.out.println("========  =======  =====  ========  =====  ========  =====");
-	        while(more)
-	        {
-	        	System.out.printf("%-8s  ",rs.getString(1));            //left aligned
-	            System.out.printf("%-7s  ",rs.getString(2));            //left aligned
-	            System.out.printf("%5s  ",rs.getInt(3));             //right aligned
-	            System.out.printf("%8s  ",rs.getInt(4));            //right aligned
-	            System.out.printf("%5s  ",rs.getInt(5));             //right aligned
-	            System.out.printf("%-8s  ",rs.getString(6));            //right aligned
-	            System.out.printf("%5s%n",rs.getString(7));   //right aligned
-	            
-	        	more=rs.next();
-	        }
-	        } catch(SQLException e) {
-	         System.out.println("Connection URL or username or password errors!");
-	        e.printStackTrace();
-	        }
 		
-	}
-	*/
 }
