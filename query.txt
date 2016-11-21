@@ -1,5 +1,5 @@
 cust prod quant state
 1
 cust prod
-1_sum_quant
+sum_1_quant
 1.state="NY"

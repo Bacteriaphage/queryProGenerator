@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.io.FileWriter;
 public class queryProGenerator {
 	String usr = "postgres";
 	String pwd = "zhy199208";
@@ -36,11 +37,26 @@ public class queryProGenerator {
 		HashMap<String, String> MFstructure = new HashMap<String,String>();
 		task.inputQuery(myQuery);
 		task.buildStruct(myQuery,MFstructure);
-		Iterator it = MFstructure.entrySet().iterator();
-/*		while(it.hasNext()){
+		//Iterator it = MFstructure.entrySet().iterator();
+		/*while(it.hasNext()){
 			Map.Entry entry = (Map.Entry) it.next();
 			System.out.println(entry.getValue() + " " + entry.getKey());
 		}*/
+		File file = new File("sdap.pgc");
+		if(file.exists()){
+			System.out.println("file already exists!");
+		}
+		else{
+			try{
+				file.createNewFile();
+				FileWriter fileWriter = new FileWriter(file);
+				outputFrame(fileWriter);
+				outputMFstruct(MFstructure, fileWriter);
+				fileWriter.close();
+			}catch(IOException e){
+				e.printStackTrace();
+			}
+		}
 		//dbmsass1.retrieve();
 	}
 	//Function to connect to the database
@@ -51,6 +67,46 @@ public class queryProGenerator {
 		}catch(Exception exception){
 			System.out.println("Fail loading Driver!");
 			exception.printStackTrace();
+		}
+	}
+	static void outputFrame(FileWriter fileWriter) throws IOException{
+		String output = new String("#include<stdio.h>\n#include<string.h>\n\n");
+		output += "EXEC SQL BEGIN DECLARE SECTION;\n";
+		output += "struct{\nchar\t*cust;\nchar\t*prod;\nshort\tdd;\nshort\tmm;\nshort\tyy;\nchar\t*state;\nlong\tquant;\n} sale_rec;\n";
+		output += "EXEC SQL END DECLARE SECTION;\n";
+		output += "EXEC SQL INCLUDE sqlca;\n\n";
+		try{
+			fileWriter.write(output);
+			System.out.println("finish to build basic framework!");
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+	static void outputMFstruct(HashMap<String, String> MFstructure, FileWriter fileWriter) throws IOException{
+		String output = new String("//MFStructure\n");
+		output += "struct Data{\n";
+		Iterator it = MFstructure.entrySet().iterator();
+		while(it.hasNext()){
+			Map.Entry entry = (Map.Entry) it.next();
+			if(entry.getValue().equals("character varying")){
+				output += "\t"+"char"+"\t"+entry.getKey()+"[20];\n";
+			}
+			else if(entry.getValue().equals("integer")){
+				output += "\t"+"int"+"\t"+entry.getKey()+";\n";
+			}
+			else if(entry.getValue().equals("character")){
+				output += "\t"+"char"+"\t"+entry.getKey()+"[3];\n";
+			}
+			else{
+				System.out.println("some types unknown");
+			}
+		}
+		output += "};\n";
+		try{
+			fileWriter.write(output);
+			System.out.println("finish to build MFstructure!");
+		}catch(IOException e){
+			e.printStackTrace();
 		}
 	}
 	void inputQuery(Query myQuery) throws IOException{
@@ -110,7 +166,7 @@ public class queryProGenerator {
 		try{
 			Connection con = DriverManager.getConnection(url, usr, pwd);
 			System.out.println("Success connecting server!");
-			for(String obj:myQuery.select){
+			for(String obj:myQuery.groupingAttri){
 				ResultSet rs;
 				Statement st = con.createStatement();
 				String ret = "select * from information_schema.columns where table_name = 'sales' and column_name = '";
@@ -122,10 +178,57 @@ public class queryProGenerator {
 				rs.next();
 				MFstructure.put(obj, rs.getString(8));
 			}
+			for(String obj:myQuery.aggreFunc){
+				ResultSet rs;
+				Statement st = con.createStatement();
+				String ret = "select * from information_schema.columns where table_name = 'sales' and column_name = '";
+				//ret.concat("where table_name = 'sales' and column_name = '");
+				String[] tmp = obj.split("_");
+				ret += tmp[tmp.length-1];
+				ret += "'";
+				rs = st.executeQuery(ret);
+				rs.next();
+				if(tmp[0].equals("avg")){
+					String sum = new String("sum");
+					String count = new String("count");
+					if(tmp.length > 1){
+						sum += "_"+tmp[1]+"_"+tmp[2];
+						count += "_"+tmp[1]+"_"+tmp[2];
+					}
+					MFstructure.put(sum, rs.getString(8));
+					MFstructure.put(count, rs.getString(8));
+				}
+				else{
+					MFstructure.put(obj, rs.getString(8));
+				}
+			}
 		}catch(Exception exception){
 			System.out.println("Fail to build MFstructure");
 			exception.printStackTrace();
 		}
 	}
-		
 }
+/*
+ while loop
+while(1)
+	 {
+	 if(EOT) break;
+	 if(condition satisfied){
+	 	if(grouping attribute in MF-Struct){
+	 	update the corresponding tuple;
+	 	}
+	 	else{
+	 	add a new tuple to MF-Structure;
+	 	initial new tuple;
+	 	}
+	 } 
+ }
+ */
+/*
+ output
+ from MF_Structure
+ based on 
+ Selected Attribute1 and having clause 6
+ */
+
+
