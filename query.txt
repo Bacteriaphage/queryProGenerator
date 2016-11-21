@@ -1,5 +1,5 @@
-cust prod quant state
+cust prod 1_quant
 1
 cust prod
 sum_1_quant
-1.state="NY"
+1_state="NY" 1_quant<100 

@@ -52,6 +52,8 @@ public class queryProGenerator {
 				FileWriter fileWriter = new FileWriter(file);
 				outputFrame(fileWriter);
 				outputMFstruct(MFstructure, fileWriter);
+				outputMainFunc(fileWriter);
+				outputProcessFunc(fileWriter, myQuery);
 				fileWriter.close();
 			}catch(IOException e){
 				e.printStackTrace();
@@ -69,6 +71,119 @@ public class queryProGenerator {
 			exception.printStackTrace();
 		}
 	}
+	static void outputProcessFunc(FileWriter fileWriter, Query myQuery){
+		String output = new String("void process(struct Data *data, int *i){\n");
+		int aggreFuncIndex = 0;
+		int suchThatIndex = 0;
+		int havingIndex = 0;
+		for(int NGV = 0; NGV <= myQuery.numOfGV; NGV++){
+			if(NGV == 0){
+				String[] temp = myQuery.aggreFunc.get(0).split("_");
+				if(temp[1] != "0") continue; 
+			}
+			output += "\tEXEC SQL DECLARE mycursor CURSOR FOR SELECT * FROM sales;\n";
+			output += "\tEXEC SQL SET TRANSACTION read only;\n";
+			output += "\tEXEC SQL OPEN mycursor;\n";
+			output += "\tEXEC SQL FETCH FROM mycursor INTO :sale_rec;\n";
+			output += "\twhile(sqlca.sqlcode == 0){\n";
+			boolean condi = true;
+			if(NGV == 0){
+				String[] temp = myQuery.aggreFunc.get(aggreFuncIndex).split("_");
+				if(temp[1].equals("0")){
+					condi = false;
+				}
+			}
+			output += "\t\t"+"int j;\n";
+			output += "\t\t"+"for(j = 0; j < *i; j++)\n";
+			output += "\t\t\t"+"if(";
+			for(String obj : myQuery.groupingAttri){
+				output += "strcmp(data[j]."+obj+", sale_rec."+obj+")==0&&";
+			}
+			output = output.substring(0, output.length()- 2);
+			output += ") break;\n";
+			output += "\t\t\t" + "if(j == *i){\n";
+			if(condi){
+				output += "\t\t\t\tif(";
+				while(true){
+					String[] temp = myQuery.suchThat.get(suchThatIndex).split("_");
+					System.out.println(temp[0]);
+					if(!(temp[0].equals(Integer.toString(NGV)))) break;
+					String GVattri = new String();
+					String OBJattri = new String();
+					String operator = new String();
+					int sign = 0;
+					for(;temp[1].charAt(sign)>='a' && temp[1].charAt(sign)<='z' || 
+							temp[1].charAt(sign)>='A' && temp[1].charAt(sign)<='Z' || 
+							temp[1].charAt(sign)>='0' && temp[1].charAt(sign)<='9'; 
+							sign++){
+						GVattri += temp[1].charAt(sign);
+					}
+					while(!(temp[1].charAt(sign)>='a' && temp[1].charAt(sign)<='z' || 
+							temp[1].charAt(sign)>='A' && temp[1].charAt(sign)<='Z' ||
+							temp[1].charAt(sign)>='0' && temp[1].charAt(sign)<='9')){
+						operator += temp[1].charAt(sign);
+						sign++;
+					}
+					for(;sign < temp[1].length(); sign++){
+						OBJattri += temp[1].charAt(sign);
+					}
+					if(temp.length == 4){
+						OBJattri += "_" + temp[2] + "_" + temp[3];
+						output += "sale_rec." + GVattri + operator + "data[j]."+OBJattri;
+					}
+					else{
+						output += "sale_rec." + GVattri + operator + OBJattri;
+					}
+					String next = myQuery.suchThat.get(suchThatIndex + 1);
+					
+					if(next.equals("and") || next.equals("or")){
+						if(next.equals("and")){
+							output += " && ";
+						}
+						else{
+							output += " || ";
+						}
+						suchThatIndex += 2;   //get next condition;
+					}
+					else{
+						break;
+					}
+				}
+				output += "){\n";
+			}
+			for(String obj : myQuery.groupingAttri){
+				output += "\t\t\t\tstrcpy(data[*i]." + obj + ", "+ "sale_rec." + obj +");\n";
+			}
+			if(condi)
+				output += "\t\t\t\t}\n";
+			
+		}
+		try{
+			fileWriter.write(output);
+			System.out.println("finish to parse SQL!");
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+	static void outputMainFunc(FileWriter fileWriter) throws IOException{
+		String output = new String("int main(int argc, char* argv[])\n");
+		output += "{\n\tstruct Data data[500];\n\tint counter = 0;\n";
+		output += "\tEXEC SQL CONNECT TO postgres@localhost:5432 USER postgres IDENTIFIED BY zhy199208;\n";
+		output += "\tif(sqlca.sqlcode != 0){\n\t\tprintf(\"Login error!!!\\n\");\n";
+		output += "\t\treturn -1\n";
+		output += "\t}\n";
+		output += "\tEXEC SQL WHENEVER sqlerror sqlprint;\n";
+		output += "\tprocess(data, &counter);\n";
+		output += "\toutput(data, counter);\n";
+		output += "\treturn 0;\n";
+		output += "}\n";
+		try{
+			fileWriter.write(output);
+			System.out.println("finish to build main function!");
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
 	static void outputFrame(FileWriter fileWriter) throws IOException{
 		String output = new String("#include<stdio.h>\n#include<string.h>\n\n");
 		output += "EXEC SQL BEGIN DECLARE SECTION;\n";
@@ -82,6 +197,7 @@ public class queryProGenerator {
 			e.printStackTrace();
 		}
 	}
+	
 	static void outputMFstruct(HashMap<String, String> MFstructure, FileWriter fileWriter) throws IOException{
 		String output = new String("//MFStructure\n");
 		output += "struct Data{\n";
@@ -109,6 +225,7 @@ public class queryProGenerator {
 			e.printStackTrace();
 		}
 	}
+	
 	void inputQuery(Query myQuery) throws IOException{
 		InputStream in = null;
 		try{
@@ -139,7 +256,7 @@ public class queryProGenerator {
 					myQuery.aggreFunc.add(tmp4[i]);
 				}
 			}
-			String line5 = buf.readLine();
+			String line5 = buf.readLine();                             //condition for different GV use space to separate.
 			if(line5 != null){
 				String[] tmp5 = line5.split(" ");
 				for(int i = 0; i < tmp5.length; i++){
@@ -198,9 +315,7 @@ public class queryProGenerator {
 					MFstructure.put(sum, rs.getString(8));
 					MFstructure.put(count, rs.getString(8));
 				}
-				else{
 					MFstructure.put(obj, rs.getString(8));
-				}
 			}
 		}catch(Exception exception){
 			System.out.println("Fail to build MFstructure");
