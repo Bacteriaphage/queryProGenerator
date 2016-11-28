@@ -12,7 +12,7 @@ import java.io.FileWriter;
 public class queryProGenerator {
 	String usr = "postgres";
 	String pwd = "zhy199208";
-	String url = "jdbc:postgresql://localhost:5432/sales";
+	String url = "jdbc:postgresql://localhost:5432/postgres";
 	
 	static public class Query{
 		ArrayList<String> select;
@@ -203,6 +203,7 @@ public class queryProGenerator {
 				output += " %" + Integer.toString(obj.length())+"d \",data[j]." + obj + ");\n";
 			}
 		}
+		output += "\t\t\tprintf(\"\\n\");\n";
 		if(myQuery.havingCondi.size() != 0){
 			output += "\t\t}\n";
 		}
@@ -225,10 +226,10 @@ public class queryProGenerator {
 				String[] temp = myQuery.aggreFunc.get(0).split("_");                        //look for aggregate func for GV0
 				if(temp[1] != "0") continue; 
 			}
-			output += "\tEXEC SQL DECLARE mycursor CURSOR FOR SELECT * FROM sales;\n";
+			output += "\tEXEC SQL DECLARE mycursor"+Integer.toString(NGV)+" CURSOR FOR SELECT * FROM sales;\n";
 			output += "\tEXEC SQL SET TRANSACTION read only;\n";
-			output += "\tEXEC SQL OPEN mycursor;\n";
-			output += "\tEXEC SQL FETCH FROM mycursor INTO :sale_rec"+Integer.toString(NGV)+";\n";
+			output += "\tEXEC SQL OPEN mycursor"+Integer.toString(NGV)+";\n";
+			output += "\tEXEC SQL FETCH FROM mycursor"+Integer.toString(NGV)+" INTO :sale_rec"+Integer.toString(NGV)+";\n";
 			output += "\twhile(sqlca.sqlcode == 0){\n";
 			boolean condi = true;
 			if(NGV == 0){
@@ -268,7 +269,8 @@ public class queryProGenerator {
 					}
 					while(!(temp[1].charAt(sign)>='a' && temp[1].charAt(sign)<='z' || 
 							temp[1].charAt(sign)>='A' && temp[1].charAt(sign)<='Z' ||
-							temp[1].charAt(sign)>='0' && temp[1].charAt(sign)<='9')){
+							temp[1].charAt(sign)>='0' && temp[1].charAt(sign)<='9' ||
+							temp[1].charAt(sign) == '"')){
 						operator += temp[1].charAt(sign);
 						sign++;
 					}
@@ -280,10 +282,20 @@ public class queryProGenerator {
 					}
 					if(temp.length == 4){
 						OBJattri += "_" + temp[2] + "_" + temp[3];
-						output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + "data[j]."+OBJattri;
+						if(GVattri.equals("quant") || GVattri.equals("month") || GVattri.equals("year") || GVattri.equals("day")){	
+							output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + "data[j]."+OBJattri;
+						}
+						else{
+							output += "(strcmp(sale_rec"+Integer.toString(NGV)+"." + GVattri +",data[j]." + OBJattri +")==0)";
+						}
 					}
 					else{
-						output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + OBJattri;
+						if(GVattri.equals("quant") || GVattri.equals("month") || GVattri.equals("year") || GVattri.equals("day")){	
+							output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + OBJattri;
+						}
+						else{
+							output += "(strcmp(sale_rec"+Integer.toString(NGV)+"." + GVattri +"," + OBJattri +")==0)";
+						}
 					}
 					if(i + 1 >= myQuery.suchThat.size()) break;
 					String next = myQuery.suchThat.get(i + 1);
@@ -297,6 +309,7 @@ public class queryProGenerator {
 						i += 2;   //get next condition;
 					}
 					else{
+						i++;
 						break;
 					}
 				}
@@ -354,7 +367,8 @@ public class queryProGenerator {
 					}
 					while(!(temp[1].charAt(sign)>='a' && temp[1].charAt(sign)<='z' || 
 							temp[1].charAt(sign)>='A' && temp[1].charAt(sign)<='Z' ||
-							temp[1].charAt(sign)>='0' && temp[1].charAt(sign)<='9')){
+							temp[1].charAt(sign)>='0' && temp[1].charAt(sign)<='9' ||
+							temp[1].charAt(sign) == '"')){
 						operator += temp[1].charAt(sign);
 						sign++;
 					}
@@ -366,10 +380,20 @@ public class queryProGenerator {
 					}
 					if(temp.length == 4){
 						OBJattri += "_" + temp[2] + "_" + temp[3];
-						output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + "data[j]."+OBJattri;
+						if(GVattri.equals("quant") || GVattri.equals("month") || GVattri.equals("year") || GVattri.equals("day")){	
+							output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + "data[j]."+OBJattri;
+						}
+						else{
+							output += "(strcmp(sale_rec"+Integer.toString(NGV)+"." + GVattri +",data[j]." + OBJattri +")==0)";
+						}
 					}
 					else{
-						output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + OBJattri;
+						if(GVattri.equals("quant") || GVattri.equals("month") || GVattri.equals("year") || GVattri.equals("day")){	
+							output += "sale_rec"+Integer.toString(NGV)+"." + GVattri + operator + OBJattri;
+						}
+						else{
+							output += "(strcmp(sale_rec"+Integer.toString(NGV)+"." + GVattri +"," + OBJattri +")==0)";
+						}
 					}
 					if(suchThatIndex + 1 >= myQuery.suchThat.size()) break;
 					String next = myQuery.suchThat.get(suchThatIndex + 1);
@@ -383,6 +407,7 @@ public class queryProGenerator {
 						suchThatIndex += 2;   //get next condition;
 					}
 					else{
+						suchThatIndex++;
 						break;
 					}
 				}
@@ -416,13 +441,12 @@ public class queryProGenerator {
 				if(condi)
 					output += "\t\t\t}\n";
 				output += "\t\t}\n";
-				output += "\t\tEXEC SQL FETCH FROM cursor INTO :sale_rec"+Integer.toString(NGV)+";\n";
+				output += "\t\tEXEC SQL FETCH FROM mycursor"+Integer.toString(NGV)+" INTO :sale_rec"+Integer.toString(NGV)+";\n";
 				output += "\t}\n";
-				output += "\tEXEC SQL CLOSE cursor;\n";
-			}
-			output += "}\n";
-			
+				output += "\tEXEC SQL CLOSE mycursor"+Integer.toString(NGV)+";\n";
+			}			
 		}
+		output += "}\n";
 		try{
 			fileWriter.write(output);
 			System.out.println("finish to parse SQL!");
@@ -435,7 +459,7 @@ public class queryProGenerator {
 		output += "{\n\tstruct Data data[500];\n\tint counter = 0;\n";
 		output += "\tEXEC SQL CONNECT TO postgres@localhost:5432 USER postgres IDENTIFIED BY zhy199208;\n";
 		output += "\tif(sqlca.sqlcode != 0){\n\t\tprintf(\"Login error!!!\\n\");\n";
-		output += "\t\treturn -1\n";
+		output += "\t\treturn -1;\n";
 		output += "\t}\n";
 		output += "\tEXEC SQL WHENEVER sqlerror sqlprint;\n";
 		output += "\tprocess(data, &counter);\n";

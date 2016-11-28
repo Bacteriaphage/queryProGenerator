@@ -1,5 +1,5 @@
-cust prod sum_1_quant
-1
+cust prod sum_1_quant sum_2_quant
+2
 cust prod
-sum_1_quant
-1_state="NY" and 1_quant<1000 
+sum_1_quant sum_2_quant
+1_state="NY" 2_state="NJ"
