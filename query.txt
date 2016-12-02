@@ -1,5 +1,5 @@
-cust prod sum_1_quant sum_2_quant
-2
+cust prod sum_1_quant count_1_quant
+1
 cust prod
-sum_1_quant sum_2_quant
-1_state="NY" 2_state="NJ"
+avg_0_quant sum_1_quant count_1_quant
+1_state="NY" and 1_quant>avg_0_quant

@@ -164,7 +164,7 @@ public class queryProGenerator {
 							flag = false;
 						}
 					}
-					output += "data[j]." + first + (operator.equals("=") ? "==" : operator) + second;
+					output += "data[j]." + first + (operator.equals("=") ? "==" : operator) + "data[j]." +second;
 				}
 				else if(obj.equals("and")){
 					output += "&&";
@@ -224,7 +224,7 @@ public class queryProGenerator {
 		for(int NGV = 0; NGV <= myQuery.numOfGV; NGV++){                                    //count grouping variables
 			if(NGV == 0){
 				String[] temp = myQuery.aggreFunc.get(0).split("_");                        //look for aggregate func for GV0
-				if(temp[1] != "0") continue; 
+				if(!temp[1].equals("0")) continue; 
 			}
 			output += "\tEXEC SQL DECLARE mycursor"+Integer.toString(NGV)+" CURSOR FOR SELECT * FROM sales;\n";
 			output += "\tEXEC SQL SET TRANSACTION read only;\n";
@@ -338,7 +338,10 @@ public class queryProGenerator {
 						output += "\t\t\t\tdata[j]." + myQuery.aggreFunc.get(i) + "=sale_rec"+Integer.toString(NGV)+"." + temp[2] + ";\n";
 					}
 					else if(temp[0].equals("avg")){
-						output += "\t\t\t\tdata[j]." + myQuery.aggreFunc.get(i) + "=data[j].sum/data[j].count;\n";
+						
+						output += "\t\t\t\tdata[j].sum_" + temp[1] + "_" + temp[2] + "=sale_rec"+Integer.toString(NGV)+"." + temp[2] + ";\n" ;
+						output += "\t\t\t\tdata[j].count_" + temp[1] + "_" + temp[2] + "=1" +";\n" ;
+						output += "\t\t\t\tdata[j]." + myQuery.aggreFunc.get(i) + "=data[j].sum_"+temp[1] + "_" + temp[2]+"/data[j].count_"+ temp[1] + "_" + temp[2] +";\n";
 					}
 					else{
 						System.out.println("unknow aggregate func");
@@ -432,19 +435,21 @@ public class queryProGenerator {
 						output += "\t\t\t\t\tdata[j]." + myQuery.aggreFunc.get(aggreFuncIndex) + "=sale_rec"+Integer.toString(NGV)+"." + temp[2] + ";\n";
 					}
 					else if(temp[0].equals("avg")){
-						output += "\t\t\t\tdata[j]." + myQuery.aggreFunc.get(aggreFuncIndex) + "=data[j].sum/data[j].count;\n";
+						output += "\t\t\t\tdata[j].count_" + temp[1] + "_" + temp[2] + "++" +";\n" ;
+						output += "\t\t\t\tdata[j].sum_" + temp[1] + "_" + temp[2] + "+=sale_rec"+Integer.toString(NGV)+"." + temp[2] + ";\n" ;
+						output += "\t\t\t\tdata[j]." + myQuery.aggreFunc.get(aggreFuncIndex) + "=data[j].sum_"+temp[1] + "_" + temp[2]+"/data[j].count_"+ temp[1] + "_" + temp[2] +";\n";
 					}
 					else{
 						System.out.println("unknow aggregate func");
 					}
-				}
-				if(condi)
-					output += "\t\t\t}\n";
-				output += "\t\t}\n";
-				output += "\t\tEXEC SQL FETCH FROM mycursor"+Integer.toString(NGV)+" INTO :sale_rec"+Integer.toString(NGV)+";\n";
-				output += "\t}\n";
-				output += "\tEXEC SQL CLOSE mycursor"+Integer.toString(NGV)+";\n";
-			}			
+				}	
+			}
+			if(condi)
+				output += "\t\t\t}\n";
+			output += "\t\t}\n";
+			output += "\t\tEXEC SQL FETCH FROM mycursor"+Integer.toString(NGV)+" INTO :sale_rec"+Integer.toString(NGV)+";\n";
+			output += "\t}\n";
+			output += "\tEXEC SQL CLOSE mycursor"+Integer.toString(NGV)+";\n";
 		}
 		output += "}\n";
 		try{
@@ -480,6 +485,10 @@ public class queryProGenerator {
 		for(int NGV = 2; NGV <= myQuery.numOfGV; NGV++){
 			output += ", sale_rec" + Integer.toString(NGV);
 		}
+		String[] temp = myQuery.aggreFunc.get(0).split("_");                        //look for aggregate func for GV0
+		if(temp[1].equals("0")){
+			output += ", sale_rec0";
+		} 
 		output += ";\n";
 		output += "EXEC SQL END DECLARE SECTION;\n";
 		output += "EXEC SQL INCLUDE sqlca;\n\n";
@@ -638,5 +647,3 @@ while(1)
  based on 
  Selected Attribute1 and having clause 6
  */
-
-
