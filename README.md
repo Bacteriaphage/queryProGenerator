@@ -45,7 +45,6 @@ else{
 		...
 	}
 }
-}
 ```
 If there is a varible want to check another state, say, NJ and it is independent with NY grouping varible, the program structure will become:
 ```
