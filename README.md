@@ -66,7 +66,7 @@ else{                                        //the combination has already been 
 }
 ```
 #### outputOutputFunc(FileWriter fileWriter, Query myQuery, HashMap< String , String > MFstructure)
-This function will grant the C program the logic to do output and organize the query output format. The basic idea is just scanning the MFstructure because it has all we need. During output each tuple, C program also need to deal with "having condition" to decide which tuple should be print out. So the structure of output logiv is somehow like the table scan process because one needs to tackle "having condition", the other need to do with "such that".
+This function will grant the C program the logic to do output and organize the query output format. The basic idea is just scanning the MFstructure because it has all we need. During output each tuple, C program also need to deal with "having condition" to decide which tuple should be print out. So the structure of output logiv is somehow like the table scan process because one needs to tackle "having condition", the other needs to do with "such that".
 
 #### outputFrame(FileWriter fileWriter, Query myQuery)
 This function helps C program define its data structure of table scan cursor. According to the number of grouping varible, it also declare enough cursors.
