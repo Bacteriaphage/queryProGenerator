@@ -72,6 +72,7 @@ public class queryProGenerator {
 			exception.printStackTrace();
 		}
 	}
+	//build the output logic including having condition
 	static void outputOutputFunc(FileWriter fileWriter, Query myQuery, HashMap<String, String> MFstructure){
 		String output = new String("void output(struct Data *data, int i){\n");
 		output += "\tprintf(\"";
@@ -217,6 +218,7 @@ public class queryProGenerator {
 		}
 		
 	}
+	//build the table scan logic and add the such that condition during the table scan
 	static void outputProcessFunc(FileWriter fileWriter, Query myQuery, HashMap<String, String> MFstructure){
 		String output = new String("void process(struct Data *data, int *i){\n");
 		int aggreFuncIndex = 0;
@@ -581,6 +583,7 @@ public class queryProGenerator {
 			}
 		}
 	}
+	//put MF-structure attributes and their typename into HashMap
 	void buildStruct(Query myQuery, HashMap<String, String> MFstructure){
 		try{
 			Connection con = DriverManager.getConnection(url, usr, pwd);
