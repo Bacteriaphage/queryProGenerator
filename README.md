@@ -36,35 +36,34 @@ About optimization:
 In some situation, we can complete several grouping varibles within only one table scan, we call these kind of varible or aggragate function as independent grouping varibles or functions. Before we generate the table scan code, we need to build a directive graph according to the "such that" argument, then use kahn's algorithm to do topological sort and figure out which grouping varibles can be done in one table scan. Without optimization the C program structure is like this:
 ```
 if(j == *i){
-			if((strcmp(sale_rec1.state,"NY")==0)){
-				...
-			}
-		}
-		else{
-			if((strcmp(sale_rec1.state,"NY")==0)){
-				...
-			}
-		}
+	if((strcmp(sale_rec1.state,"NY")==0)){
+		...
+	}
+}
+else{
+	if((strcmp(sale_rec1.state,"NY")==0)){
+		...
+	}
+}
 }
 ```
 If there is a varible want to check another state, say, NJ and it is independent with NY grouping varible, the program structure will become:
 ```
-if(j == *i){                                     //the combination of group attributes is not exist in MFstructure 
-			if((strcmp(sale_rec1.state,"NY")==0)){
-				...
-			}
-      else if((strcmp(sale_rec1.state,"NY")==0)){
-        ...
-      }
-		}
-		else{                                        //the combination has already been in MFstructure
-			if((strcmp(sale_rec1.state,"NY")==0)){
-				...
-			}
-      else if((strcmp(sale_rec1.state,"NY")==0)){
-        ...
-      }
-		}
+if(j == *i){                                 //the combination of group attributes is not exist in MFstructure 
+	if((strcmp(sale_rec1.state,"NY")==0)){
+		...
+	}
+	else if((strcmp(sale_rec1.state,"NY")==0)){
+	...
+	}
+}
+else{                                        //the combination has already been in MFstructure
+	if((strcmp(sale_rec1.state,"NY")==0)){
+		...
+	}
+	else if((strcmp(sale_rec1.state,"NY")==0)){
+	...
+	}
 }
 ```
 ### outputOutputFunc(FileWriter fileWriter, Query myQuery, HashMap< String , String > MFstructure)
