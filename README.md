@@ -16,6 +16,9 @@ avg_0_quant sum_1_quant count_1_quant
 That means for each customer and product, output the sum and count of the trading quantity which traded in NY state and the quantity is greater than the average quantity of whole year for this combination of customer and product.  
 
 *This MF-query do not have "having condition" so there are only 5 argument in it. *
+## Project Diagram
+
+![](https://github.com/Bacteriaphage/queryProGenerator/blob/master/diagram.JPG)
 
 ## Pre-Propcess Function explanation
 #### inputQuery(Query myQuery)
