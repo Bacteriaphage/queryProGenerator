@@ -60,7 +60,7 @@ if(j == *i){                                 //the combination of group attribut
 	if((strcmp(sale_rec1.state,"NY")==0)){
 		...
 	}
-	else if((strcmp(sale_rec1.state,"NY")==0)){
+	else if((strcmp(sale_rec1.state,"NJ")==0)){
 	...
 	}
 }
@@ -68,7 +68,7 @@ else{                                        //the combination has already been 
 	if((strcmp(sale_rec1.state,"NY")==0)){
 		...
 	}
-	else if((strcmp(sale_rec1.state,"NY")==0)){
+	else if((strcmp(sale_rec1.state,"NJ")==0)){
 	...
 	}
 }
