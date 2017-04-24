@@ -25,7 +25,7 @@ That means for each customer and product, output the sum and count of the tradin
 
 ![](https://github.com/Bacteriaphage/queryProGenerator/blob/master/diagram.JPG)
 
-## Pre-Propcess Function explanation
+## Pre-Process Function explanation
 #### inputQuery(Query myQuery)
 This function get this query input then store these data into a Query object.
 
