@@ -8,11 +8,16 @@ The Java program will automatically generate a C program to process the input qu
 A example query is like this:
 `
 cust prod sum_1_quant count_1_quant
+
 1
+
 cust prod
+
 avg_0_quant sum_1_quant count_1_quant
+
 1_state="NY" and 1_quant>avg_0_quant
 `
+
 That means for each customer and product, output the sum and count of the trading quantity which traded in NY state and the quantity is greater than the average quantity of whole year for this combination of customer and product.  
 
 *This MF-query do not have "having condition" so there are only 5 argument in it. *
